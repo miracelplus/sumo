@@ -314,67 +314,67 @@ class Builder(object):
                 self.report("Error while downloading background images: %s" % e)
                 self.decalError = True
 
-        if self.data["vehicles"] or ptOptions:
-            # routenames stores all routefiles and will join the items later, will
-            # be used by sumo-gui
-            randomTripsCalls = []
+        # if self.data["vehicles"] or ptOptions:
+        #     # routenames stores all routefiles and will join the items later, will
+        #     # be used by sumo-gui
+        #     randomTripsCalls = []
 
-            self.edges = sumolib.net.readNet(os.path.join(self.tmp, self.files["net"])).getEdges()
+        #     self.edges = sumolib.net.readNet(os.path.join(self.tmp, self.files["net"])).getEdges()
 
-            for vehicle in sorted(self.data["vehicles"].keys()):
-                options = self.data["vehicles"][vehicle]
-                self.report("Processing %s" % vehicleNames[vehicle])
+            # for vehicle in sorted(self.data["vehicles"].keys()):
+            #     options = self.data["vehicles"][vehicle]
+            #     self.report("Processing %s" % vehicleNames[vehicle])
 
-                self.filename("route", ".%s.rou.xml" % vehicle)
-                self.filename("trips", ".%s.trips.xml" % vehicle)
+            #     self.filename("route", ".%s.rou.xml" % vehicle)
+            #     self.filename("trips", ".%s.trips.xml" % vehicle)
 
-                try:
-                    options = self.parseTripOpts(vehicle, options, self.data["publicTransport"])
-                except ZeroDivisionError:
-                    continue
+            #     try:
+            #         options = self.parseTripOpts(vehicle, options, self.data["publicTransport"])
+            #     except ZeroDivisionError:
+            #         continue
 
-                if vehicle == "pedestrian" and self.data["publicTransport"]:
-                    options += ["--additional-files", ",".join([self.files["stops"], self.files["ptroutes"]])]
-                    options += ["--persontrip.walk-opposite-factor", "0.8"]
-                    options += ["--duarouter-weights.tls-penalty", "20"]
+            #     if vehicle == "pedestrian" and self.data["publicTransport"]:
+            #         options += ["--additional-files", ",".join([self.files["stops"], self.files["ptroutes"]])]
+            #         options += ["--persontrip.walk-opposite-factor", "0.8"]
+            #         options += ["--duarouter-weights.tls-penalty", "20"]
 
-                try:
-                    randomTrips.main(randomTrips.get_options(options))
-                except ValueError:
-                    print("Could not generate %s traffic" % vehicle, file=sys.stderr)
-                    continue
+            #     try:
+            #         randomTrips.main(randomTrips.get_options(options))
+            #     except ValueError:
+            #         print("Could not generate %s traffic" % vehicle, file=sys.stderr)
+            #         continue
 
-                randomTripsCalls.append(options)
+            #     randomTripsCalls.append(options)
 
-                # --validate is not called for pedestrians
-                if vehicle == "pedestrian":
-                    self.routenames.append(self.files["route"])
-                else:
-                    self.routenames.append(self.files["trips"])
-                    # clean up unused route file (was only used for validation)
-                    os.remove(self.files["route"])
+            #     # --validate is not called for pedestrians
+            #     if vehicle == "pedestrian":
+            #         self.routenames.append(self.files["route"])
+            #     else:
+            #         self.routenames.append(self.files["trips"])
+            #         # clean up unused route file (was only used for validation)
+            #         os.remove(self.files["route"])
 
-            # create a batch file for reproducing calls to randomTrips.py
-            if os.name == "posix":
-                SUMO_HOME_VAR = "$SUMO_HOME"
-            else:
-                SUMO_HOME_VAR = "%SUMO_HOME%"
+            # # create a batch file for reproducing calls to randomTrips.py
+            # if os.name == "posix":
+            #     SUMO_HOME_VAR = "$SUMO_HOME"
+            # else:
+            #     SUMO_HOME_VAR = "%SUMO_HOME%"
 
-            randomTripsPath = os.path.join(SUMO_HOME_VAR, "tools", "randomTrips.py")
-            ptlines2flowsPath = os.path.join(SUMO_HOME_VAR, "tools", "ptlines2flows.py")
+            # randomTripsPath = os.path.join(SUMO_HOME_VAR, "tools", "randomTrips.py")
+            # ptlines2flowsPath = os.path.join(SUMO_HOME_VAR, "tools", "ptlines2flows.py")
 
-            self.filename("build.bat", "build.bat", False)
-            batchFile = self.files["build.bat"]
-            with open(batchFile, 'w') as f:
-                if os.name == "posix":
-                    f.write("#!/bin/bash\n")
-                if ptOptions is not None:
-                    f.write('python "%s" %s\n' %
-                            (ptlines2flowsPath, " ".join(map(quoted_str, self.getRelative(ptOptions)))))
-                for opts in randomTripsCalls:
-                    f.write('python "%s" %s\n' %
-                            (randomTripsPath, " ".join(map(quoted_str, self.getRelative(opts)))))
-            os.chmod(batchFile, BATCH_MODE)
+            # self.filename("build.bat", "build.bat", False)
+            # batchFile = self.files["build.bat"]
+            # with open(batchFile, 'w') as f:
+            #     if os.name == "posix":
+            #         f.write("#!/bin/bash\n")
+            #     if ptOptions is not None:
+            #         f.write('python "%s" %s\n' %
+            #                 (ptlines2flowsPath, " ".join(map(quoted_str, self.getRelative(ptOptions)))))
+            #     for opts in randomTripsCalls:
+            #         f.write('python "%s" %s\n' %
+            #                 (randomTripsPath, " ".join(map(quoted_str, self.getRelative(opts)))))
+            # os.chmod(batchFile, BATCH_MODE)
 
     def parseTripOpts(self, vehicle, options, publicTransport):
         "Return an option list for randomTrips.py for a given vehicle"
